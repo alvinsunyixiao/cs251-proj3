@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>StanDex Exchange</title>
+    <title id="exchange-title-header"></title>
     <link rel="stylesheet" type="text/css" href="./style.css">
     <script src="./web3.min.js"></script>
     <script src="./abi-decoder.js"></script>
@@ -19,6 +19,8 @@
     <div class="panel panel_right">
       <h2>My Account</h2>
       <select id="myaccount" class="account"></select>
+      <h3 id="account-eth-balance"></h3>
+      <h3 id="account-tok-balance"></h3>
     </div>
     <div id="main">
       <div id="main-display">

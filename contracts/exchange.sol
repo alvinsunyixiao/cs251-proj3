@@ -35,6 +35,7 @@ contract TokenExchange {
 
     event AddLiquidity(address from, uint amount);
     event RemoveLiquidity(address to, uint amount);
+    event Received(address from, uint amountETH);
 
     constructor()
     {
@@ -46,6 +47,12 @@ contract TokenExchange {
         _;
     }
 
+    // Used for receiving ETH
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
+    fallback() external payable{}
+
     // Function createPool: Initializes a liquidity pool between your Token and ETH.
     // ETH will be sent to pool in this transaction as msg.value
     // amountTokens specifies the amount of tokens to transfer from the liquidity provider.
@@ -55,8 +62,6 @@ contract TokenExchange {
         payable
         AdminOnly
     {
-        // This function is already implemented for you; no changes needed
-
         // require pool does not yet exist
         require (token_reserves == 0, "Token reserves was not 0");
         require (eth_reserves == 0, "ETH reserves was not 0.");
@@ -70,7 +75,8 @@ contract TokenExchange {
         token_reserves = amountTokens;
         k = eth_reserves.mul(token_reserves);
 
-        // initialize contribution tracker
+        // TODO: Keep track of the initial liquidity added so the initial provider
+        //          can remove this liquidity
         totalContrib = msg.value;
         contrib[msg.sender] = msg.value;
     }
@@ -262,7 +268,7 @@ contract TokenExchange {
         token_reserves = token_reserves_new;
 
         /***************************/
-        // DO NOT CHANGE BELOW THIS LINE
+        // DO NOT MODIFY BELOW THIS LINE
         /* Check for x * y == k, assuming x and y are rounded to the nearest integer. */
         // Check for Math.abs(token_reserves * eth_reserves - k) < (token_reserves + eth_reserves + 1));
         //   to account for the small decimal errors during uint division rounding.
@@ -317,7 +323,7 @@ contract TokenExchange {
         token_reserves = token_reserves_new;
 
         /**************************/
-        // DO NOT CHANGE BELOW THIS LINE
+        // DO NOT MODIFY BELOW THIS LINE
         /* Check for x * y == k, assuming x and y are rounded to the nearest integer. */
         // Check for Math.abs(token_reserves * eth_reserves - k) < (token_reserves + eth_reserves + 1));
         //   to account for the small decimal errors during uint division rounding.

@@ -294,6 +294,7 @@ const token_abi = [
 const token_contract = new web3.eth.Contract(token_abi, token_address);
 
 // TODO: Paste your exchange address and ABI here
+const exchange_address = '0x9B418CB218B1C464A674cdf38DeA9f26C370A764';
 const exchange_abi = [
   {
     "inputs": [],
@@ -558,7 +559,6 @@ const exchange_abi = [
     "type": "function"
   }
 ];
-const exchange_address = '0x9B418CB218B1C464A674cdf38DeA9f26C370A764';
 const exchange_contract = new web3.eth.Contract(exchange_abi, exchange_address);
 
 
@@ -719,6 +719,24 @@ web3.eth.getAccounts().then((response)=> {
       $("#eth-reserves").html(poolState['eth_liquidity'] + " ETH");
     });
   });
+
+  web3.eth.getBalance(web3.eth.defaultAccount).then((res) => {
+    $("#account-eth-balance").html("Ethereum balance: " + parseInt(res, 10) * 10**(-18) + " ETH");
+  });
+  token_contract.methods.balanceOf(web3.eth.defaultAccount).call({from:web3.eth.defaultAccount}).then((res) => {
+    $("#account-tok-balance").html(token_name + " balance: " + parseInt(res, 10) * 10 **(-18) + " " + token_symbol);
+  });;
+});
+
+// This code updates the 'My Account' UI with the balances of the account
+$("#myaccount").change(function() {
+  web3.eth.defaultAccount = $(this).val();
+  web3.eth.getBalance(web3.eth.defaultAccount).then((res) => {
+    $("#account-eth-balance").html("Ethereum balance: " + parseInt(res, 10) * 10**(-18) + " ETH");
+  });
+  token_contract.methods.balanceOf(web3.eth.defaultAccount).call({from:web3.eth.defaultAccount}).then((res) => {
+    $("#account-tok-balance").html(token_name + " balance: " + parseInt(res, 10) * 10 **(-18) + " " + token_symbol);
+  });;
 });
 
 // Allows switching between accounts in 'My Account'
@@ -774,3 +792,83 @@ $("#swap-eth").html("Swap ETH for " + token_symbol);
 $("#swap-token").html("Swap " + token_symbol + " for ETH");
 
 $("#title").html(exchange_name);
+
+$("#exchange-title-header").html(exchange_name);
+
+
+
+// =============================================================================
+//                                SANITY CHECK
+// =============================================================================
+
+// This section contains a sanity check test that you can use to ensure your code
+// works. We will be testing your code this way, so make sure you at least pass
+// the given test. You are encouraged to write more tests!
+
+// Uncomment the call to sanityCheck() (last line) to have it run when index.html is launched.
+
+function check(name, condition) {
+  if (condition) {
+    console.log(name + ": SUCCESS");
+    return 3;
+  } else {
+    console.log(name + ": FAILED");
+    return 0;
+  }
+}
+
+async function sanityCheck() {
+  var score = 0;
+  var accounts = await web3.eth.getAccounts();
+  web3.eth.defaultAccount = accounts[0];
+
+  console.log ("\nTEST", "Swapping 10000000 wei for Tokens");
+  await swapETHForTokens(10000000, 10);
+  var eth_reserves = await exchange_contract.methods.eth_reserves().call();
+  var token_reserves = await exchange_contract.methods.token_reserves().call();
+  // Accounting for LP fees, if they have already implemented Part 5
+  score += check("eth_reserves updated correctly", eth_reserves > 10000000000 && eth_reserves <= 10010000000);
+  score += check("token_reserves updated correctly", token_reserves < 10000000000 && token_reserves >= 9990000000);
+  // Check tokens and ETH were actually transferred
+  var num_tokens = await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
+  score += check("Tokens were successfully transferred", num_tokens > 0 && num_tokens <= 10000000);
+
+
+  console.log("\nTEST", "Adding Liquidity");
+  eth_reserves = await exchange_contract.methods.eth_reserves().call();
+  await addLiquidity(1000000, 10);
+  var eth_reserves_1 = await exchange_contract.methods.eth_reserves().call();
+  var token_reserves_1 = await exchange_contract.methods.token_reserves().call();
+  score += check("eth_reserves updated correctly", eth_reserves_1 > eth_reserves);
+  score += check("token_reserves updated correctly", token_reserves_1 > token_reserves);
+  // Check tokens were actually transferred
+  var num_tokens_2 = await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
+  score += check("Tokens were successfully transferred to the pool", num_tokens_2 < num_tokens);
+
+  console.log("\nTEST", "Removing Liquidity");
+  await removeLiquidity(100000, 10);
+  var eth_reserves_2 = await exchange_contract.methods.eth_reserves().call();
+  var token_reserves_2 = await exchange_contract.methods.token_reserves().call();
+  score += check("eth_reserves updated correctly", eth_reserves_2 == eth_reserves_1 - 100000);
+  score += check("token_reserves updated correctly", token_reserves_2 < token_reserves_1);
+  // Check tokens were actually transferred
+  var num_tokens_3 = await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
+  score += check("Tokens were successfully transferred to user", num_tokens_3 > num_tokens_2);
+
+
+  console.log("\nTEST", "Swap Tokens for ETH");
+  await swapTokensForETH(100000, 10);
+  var eth_reserves_final = await exchange_contract.methods.eth_reserves().call();
+  var token_reserves_3 = await exchange_contract.methods.token_reserves().call();
+  score += check("eth_reserves updated correctly", eth_reserves_final < eth_reserves_2);
+  score += check("token_reserves updated correctly", token_reserves_3 > token_reserves_2);
+  // Check tokens and ETH were actually transferred
+  var final_tokens = 	await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
+  score += check("Tokens were successfully traded", final_tokens < num_tokens_3);
+
+  // TODO: Students write their own tests for Part 4 + 5, since it depends on their design
+  console.log("Final Score: " + score +"/36");
+}
+
+// Uncomment this to run when directly opening index.html
+// sanityCheck();
