@@ -15,7 +15,7 @@ const token_symbol = 'QDOT';               // TODO: replace with symbol for your
 //         ABIs and Contract Addresses: Paste Your ABIs/Addresses Here
 // =============================================================================
 // TODO: Paste your token contract address and ABI here:
-const token_address = '0x0e0Fe0e70C6a8E7cC98A0da17966dEadf2735704';
+const token_address = '0xfEf09d60973C4B91BF8e1C6e6f018867814F6F3d';
 const token_abi = [
   {
     "inputs": [],
@@ -294,7 +294,7 @@ const token_abi = [
 const token_contract = new web3.eth.Contract(token_abi, token_address);
 
 // TODO: Paste your exchange address and ABI here
-const exchange_address = '0x9B418CB218B1C464A674cdf38DeA9f26C370A764';
+const exchange_address = '0x1e0A0aa780800e9038D6a40302527d768182e927';
 const exchange_abi = [
   {
     "inputs": [],
@@ -326,6 +326,25 @@ const exchange_abi = [
       {
         "indexed": false,
         "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountETH",
+        "type": "uint256"
+      }
+    ],
+    "name": "Received",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "to",
         "type": "address"
       },
@@ -338,6 +357,10 @@ const exchange_abi = [
     ],
     "name": "RemoveLiquidity",
     "type": "event"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "fallback"
   },
   {
     "inputs": [
@@ -534,6 +557,32 @@ const exchange_abi = [
   },
   {
     "inputs": [],
+    "name": "swap_fee_denominator",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "swap_fee_numerator",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "tokenAddr",
     "outputs": [
       {
@@ -557,11 +606,15 @@ const exchange_abi = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ];
 const exchange_contract = new web3.eth.Contract(exchange_abi, exchange_address);
 
-
+let swapFeeRate = undefined;
 
 // =============================================================================
 //                              Provided Functions
@@ -574,16 +627,20 @@ async function init() {
   if (poolState['token_liquidity'] === 0
     && poolState['eth_liquidity'] === 0) {
     // Call mint twice to make sure mint can be called mutliple times prior to disable_mint
-    const total_supply = web3.utils.toWei("10", "ether");
-    const half_supply = web3.utils.toWei("5", "ether");
-    await token_contract.methods._mint(half_supply).send({from:web3.eth.defaultAccount, gas : 999999});
-    await token_contract.methods._mint(half_supply).send({from:web3.eth.defaultAccount, gas : 999999});
+    const total_supply = 10000000000;
+    await token_contract.methods._mint(total_supply / 2).send({from:web3.eth.defaultAccount, gas : 999999});
+    await token_contract.methods._mint(total_supply / 2).send({from:web3.eth.defaultAccount, gas : 999999});
     await token_contract.methods._disable_mint().send({from:web3.eth.defaultAccount, gas : 999999});
     await token_contract.methods.approve(exchange_address, total_supply).send({from:web3.eth.defaultAccount});
     // initialize pool with equal amounts of ETH and tokens, so exchange rate begins as 1:1
     await exchange_contract.methods.createPool(total_supply).send({from:web3.eth.defaultAccount, value : total_supply, gas : 999999});
 
     // All accounts start with 0 of your tokens. Thus, be sure to swap before adding liquidity.
+  }
+
+  // intialize swap transaction fee rate from the contract
+  if (swapFeeRate === undefined) {
+    await setFeeRate();
   }
 }
 
@@ -620,10 +677,10 @@ async function addLiquidity(amountEth, maxSlippagePct) {
   let maxAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 + maxSlippagePct / 100.0);
   let minAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 - maxSlippagePct / 100.0);
 
-  // convert big ints to strings
-  amountEth = web3.utils.toWei(amountEth.toString(), "ether");
-  minAmountToken = web3.utils.toWei(minAmountToken.toString(), "ether");
-  maxAmountToken = web3.utils.toWei(maxAmountToken.toString(), "ether");
+  // convert big ints to string
+  amountEth = Math.floor(amountEth).toString();
+  maxAmountToken = Math.floor(maxAmountToken).toString();
+  minAmountToken = Math.floor(minAmountToken).toString();
 
   await token_contract.methods.approve(exchange_address, maxAmountToken).send({
     from:web3.eth.defaultAccount
@@ -641,9 +698,9 @@ async function removeLiquidity(amountEth, maxSlippagePct) {
   let minAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 - maxSlippagePct / 100.0);
 
   // convert big ints to string
-  amountEth = web3.utils.toWei(amountEth.toString(), "ether");
-  minAmountToken = web3.utils.toWei(minAmountToken.toString(), "ether");
-  maxAmountToken = web3.utils.toWei(maxAmountToken.toString(), "ether");
+  amountEth = Math.floor(amountEth).toString();
+  maxAmountToken = Math.floor(maxAmountToken).toString();
+  minAmountToken = Math.floor(minAmountToken).toString();
 
   await exchange_contract.methods.removeLiquidity(
       amountEth, minAmountToken, maxAmountToken).send({
@@ -669,19 +726,28 @@ async function removeAllLiquidity(maxSlippagePct) {
   });
 }
 
+async function setFeeRate() {
+  let swapFeeNumerator = await exchange_contract.methods.swap_fee_numerator()
+                                                        .call({from:web3.eth.defaultAccount});
+  let swapFeeDenominator = await exchange_contract.methods.swap_fee_denominator()
+                                                          .call({from:web3.eth.defaultAccount});
+  swapFeeRate = swapFeeNumerator / swapFeeDenominator;
+}
+
 /*** SWAP ***/
 async function swapTokensForETH(amountToken, maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
   let poolState = await getPoolState();
-  let minAmountETH = amountToken * poolState["eth_token_rate"] * (1.0 - maxSlippagePct / 100.0);
+  let minAmountETH = amountToken * (1 - swapFeeRate)
+                                 * poolState["eth_token_rate"]
+                                 * (1 - maxSlippagePct / 100);
 
-  // convert bit ints to string
-  amountToken = web3.utils.toWei(amountToken.toString(), "ether");
-  minAmountETH = web3.utils.toWei(minAmountETH.toString(), "ether");
+  // convert big ints to string
+  amountToken = Math.floor(amountToken).toString();
+  minAmountETH = Math.floor(minAmountETH).toString();
 
-  await token_contract.methods.approve(exchange_address, amountToken).send({
-    from:web3.eth.defaultAccount
-  });
+  await token_contract.methods.approve(exchange_address, amountToken)
+                              .send({from:web3.eth.defaultAccount});
   await exchange_contract.methods.swapTokensForETH(amountToken, minAmountETH).send({
     from:web3.eth.defaultAccount, value : 0, gas : 999999});
 }
@@ -689,11 +755,13 @@ async function swapTokensForETH(amountToken, maxSlippagePct) {
 async function swapETHForTokens(amountETH, maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
   let poolState = await getPoolState();
-  let minAmountToken = amountETH * poolState["token_eth_rate"] * (1.0 - maxSlippagePct / 100.0);
+  let minAmountToken = amountETH * (1 - swapFeeRate)
+                                 * poolState["token_eth_rate"]
+                                 * (1.0 - maxSlippagePct / 100.0);
 
-  // convert bit ints to string
-  amountETH = web3.utils.toWei(amountETH.toString(), "ether");
-  minAmountToken = web3.utils.toWei(minAmountToken.toString(), "ether");
+  // convert big ints to string
+  amountETH = Math.floor(amountETH).toString();
+  minAmountToken = Math.floor(minAmountToken).toString();
 
   await exchange_contract.methods.swapETHForTokens(minAmountToken).send({
     from:web3.eth.defaultAccount, value : amountETH, gas : 999999});
@@ -718,6 +786,9 @@ web3.eth.getAccounts().then((response)=> {
       $("#token-reserves").html(poolState['token_liquidity'] + " " + token_symbol);
       $("#eth-reserves").html(poolState['eth_liquidity'] + " ETH");
     });
+
+    // Uncomment this to run when directly opening index.html
+    // sanityCheck();
   });
 
   web3.eth.getBalance(web3.eth.defaultAccount).then((res) => {
@@ -863,12 +934,9 @@ async function sanityCheck() {
   score += check("eth_reserves updated correctly", eth_reserves_final < eth_reserves_2);
   score += check("token_reserves updated correctly", token_reserves_3 > token_reserves_2);
   // Check tokens and ETH were actually transferred
-  var final_tokens = 	await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
+  var final_tokens =  await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
   score += check("Tokens were successfully traded", final_tokens < num_tokens_3);
 
   // TODO: Students write their own tests for Part 4 + 5, since it depends on their design
   console.log("Final Score: " + score +"/36");
 }
-
-// Uncomment this to run when directly opening index.html
-// sanityCheck();

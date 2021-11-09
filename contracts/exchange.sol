@@ -13,7 +13,7 @@ contract TokenExchange {
     using SafeMath for uint;
     address public admin;
 
-    address public constant tokenAddr = 0x0e0Fe0e70C6a8E7cC98A0da17966dEadf2735704;  // TODO: Paste token contract address here.
+    address public constant tokenAddr = 0xfEf09d60973C4B91BF8e1C6e6f018867814F6F3d;  // TODO: Paste token contract address here.
     QuantumDot private token = QuantumDot(tokenAddr);         // TODO: Replace "Token" with your token class.
 
     // Liquidity pool for the exchange
@@ -24,14 +24,18 @@ contract TokenExchange {
     uint public k;
 
     // liquidity rewards
-    uint private constant swap_fee_numerator = 1;       // TODO Part 5: Set liquidity providers' returns.
-    uint private constant swap_fee_denominator = 100;
+    uint public constant swap_fee_numerator = 1;       // TODO Part 5: Set liquidity providers' returns.
+    uint public constant swap_fee_denominator = 100;
 
     // liquidity provider contribution tracker
     uint private totalContrib;
     mapping (address => uint) private contrib;
     mapping (address => bool) private isProvider;
     address[] private providers;
+
+    // temporary fee pool
+    uint private pendingFeeETH = 0;
+    uint private pendingFeeToken = 0;
 
     event AddLiquidity(address from, uint amount);
     event RemoveLiquidity(address to, uint amount);
@@ -251,7 +255,12 @@ contract TokenExchange {
         require(amountTokens <= token.balanceOf(msg.sender), "caller possesses insufficient tokens");
         require(amountTokens <= token.allowance(msg.sender, address(this)), "caller did not approve enough tokens");
 
-        uint token_reserves_new = token_reserves.add(amountTokens);
+        // subtract fees
+        uint feeTokens = amountTokens.mul(swap_fee_numerator).div(swap_fee_denominator);
+        pendingFeeToken = pendingFeeToken.add(feeTokens);
+
+        // compute new reserves (after taking out the fees)
+        uint token_reserves_new = token_reserves.add(amountTokens).sub(feeTokens);
         uint eth_reserves_new = k.div(token_reserves_new);
         require(eth_reserves_new > 0, "the swap would exhaus total ETH supply");
 
@@ -266,6 +275,9 @@ contract TokenExchange {
         // update reserve
         eth_reserves = eth_reserves_new;
         token_reserves = token_reserves_new;
+
+        // try to reinvest fees into the pool
+        tryReinvest();
 
         /***************************/
         // DO NOT MODIFY BELOW THIS LINE
@@ -307,7 +319,12 @@ contract TokenExchange {
                     where % is sent to liquidity providers.
                 Keep track of the liquidity fees to be added.
         */
-        uint eth_reserves_new = eth_reserves.add(msg.value);
+        // subtract fees
+        uint feeETH = msg.value.mul(swap_fee_numerator).div(swap_fee_denominator);
+        pendingFeeETH = pendingFeeETH.add(feeETH);
+
+        // compute new reserves (after subtracting fees)
+        uint eth_reserves_new = eth_reserves.add(msg.value).sub(feeETH);
         uint token_reserves_new = k.div(eth_reserves_new);
         require(token_reserves_new > 0, "the swap would exhaus total token supply");
 
@@ -321,6 +338,9 @@ contract TokenExchange {
         // update reserve
         eth_reserves = eth_reserves_new;
         token_reserves = token_reserves_new;
+
+        // try to reinvest fees into the pool
+        tryReinvest();
 
         /**************************/
         // DO NOT MODIFY BELOW THIS LINE
@@ -338,6 +358,25 @@ contract TokenExchange {
     }
 
     /***  Define helper functions for swaps here as needed: ***/
+    function tryReinvest() internal {
+        uint pendingETHFromTokens = pendingFeeToken.mul(eth_reserves).div(token_reserves);
+        uint amountETH = pendingFeeETH < pendingETHFromTokens ? pendingFeeETH : pendingETHFromTokens;
+        uint amountTokens = amountETH.mul(token_reserves).div(eth_reserves);
+
+        // either currency of pending fees is 0 and hence cannot reinvest into the pool
+        if (amountETH == 0) {
+            return;
+        }
+
+        // re-invest into the pool obeying the current rate
+        pendingFeeETH = pendingFeeETH.sub(amountETH);
+        pendingFeeToken = pendingFeeToken.sub(amountTokens);
+
+        // update reserves after re-investment
+        eth_reserves = eth_reserves.add(amountETH);
+        token_reserves = token_reserves.add(amountTokens);
+        k = eth_reserves.mul(token_reserves);
+    }
 
 }
 
