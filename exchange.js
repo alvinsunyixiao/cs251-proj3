@@ -5,26 +5,616 @@
 // sets up web3.js
 const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
 
-const exchange_name = 'Your Exchange Name'; // TODO: fill in the name of your exchange
+const exchange_name = 'QuantumSwap'; // TODO: fill in the name of your exchange
 
-const token_name = 'YourToken';             // TODO: replace with name of your token
-const token_symbol = 'TOKEN';               // TODO: replace with symbol for your token
+const token_name = 'QuantumDot';             // TODO: replace with name of your token
+const token_symbol = 'QDOT';               // TODO: replace with symbol for your token
 
 
 // =============================================================================
 //         ABIs and Contract Addresses: Paste Your ABIs/Addresses Here
 // =============================================================================
 // TODO: Paste your token contract address and ABI here:
-const token_address = '';
-const token_abi = [];
+const token_address = '0xfEf09d60973C4B91BF8e1C6e6f018867814F6F3d';
+const token_abi = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Approval",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Transfer",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "_disable_mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "_mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "_totalSupply",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "delegate",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "delegate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "numTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "approve",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "name",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "numTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "numTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferFrom",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
 const token_contract = new web3.eth.Contract(token_abi, token_address);
 
 // TODO: Paste your exchange address and ABI here
-const exchange_address = '';
-const exchange_abi = [];
+const exchange_address = '0x1e0A0aa780800e9038D6a40302527d768182e927';
+const exchange_abi = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "AddLiquidity",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountETH",
+        "type": "uint256"
+      }
+    ],
+    "name": "Received",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "RemoveLiquidity",
+    "type": "event"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "fallback"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "minAmountToken",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAmountToken",
+        "type": "uint256"
+      }
+    ],
+    "name": "addLiquidity",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "createPool",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "eth_reserves",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllLiquidityInETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "k",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountETH",
+        "type": "uint256"
+      }
+    ],
+    "name": "priceETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "priceToken",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "minAmountToken",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAmountToken",
+        "type": "uint256"
+      }
+    ],
+    "name": "removeAllLiquidity",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountETH",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minAmountToken",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAmountToken",
+        "type": "uint256"
+      }
+    ],
+    "name": "removeLiquidity",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "minAmountToken",
+        "type": "uint256"
+      }
+    ],
+    "name": "swapETHForTokens",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountTokens",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minAmountETH",
+        "type": "uint256"
+      }
+    ],
+    "name": "swapTokensForETH",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "swap_fee_denominator",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "swap_fee_numerator",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenAddr",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token_reserves",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+];
 const exchange_contract = new web3.eth.Contract(exchange_abi, exchange_address);
 
-
+let swapFeeRate = undefined;
 
 // =============================================================================
 //                              Provided Functions
@@ -46,6 +636,11 @@ async function init() {
     await exchange_contract.methods.createPool(total_supply).send({from:web3.eth.defaultAccount, value : total_supply, gas : 999999});
 
     // All accounts start with 0 of your tokens. Thus, be sure to swap before adding liquidity.
+  }
+
+  // intialize swap transaction fee rate from the contract
+  if (swapFeeRate === undefined) {
+    await setFeeRate();
   }
 }
 
@@ -78,33 +673,102 @@ function log(description, obj) {
 /*** ADD LIQUIDITY ***/
 async function addLiquidity(amountEth, maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
+  let poolState = await getPoolState();
+  let maxAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 + maxSlippagePct / 100.0);
+  let minAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 - maxSlippagePct / 100.0);
 
+  // convert big ints to string
+  amountEth = Math.floor(amountEth).toString();
+  maxAmountToken = Math.floor(maxAmountToken).toString();
+  minAmountToken = Math.floor(minAmountToken).toString();
+
+  await token_contract.methods.approve(exchange_address, maxAmountToken).send({
+    from:web3.eth.defaultAccount
+  });
+  await exchange_contract.methods.addLiquidity(minAmountToken, maxAmountToken).send({
+    from:web3.eth.defaultAccount, value: amountEth, gas: 999999
+  });
 }
 
 /*** REMOVE LIQUIDITY ***/
 async function removeLiquidity(amountEth, maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
+  let poolState = await getPoolState();
+  let maxAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 + maxSlippagePct / 100.0);
+  let minAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 - maxSlippagePct / 100.0);
 
+  // convert big ints to string
+  amountEth = Math.floor(amountEth).toString();
+  maxAmountToken = Math.floor(maxAmountToken).toString();
+  minAmountToken = Math.floor(minAmountToken).toString();
+
+  await exchange_contract.methods.removeLiquidity(
+      amountEth, minAmountToken, maxAmountToken).send({
+    from:web3.eth.defaultAccount, value: 0, gas: 999999});
 }
 
 async function removeAllLiquidity(maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
+  let poolState = await getPoolState();
 
+  let amountEth = await exchange_contract.methods.getAllLiquidityInETH().call({
+    from:web3.eth.defaultAccount
+  });
+  let maxAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 + maxSlippagePct / 100.0);
+  let minAmountToken = amountEth * poolState["token_eth_rate"] * (1.0 - maxSlippagePct / 100.0);
+
+  // convert big ints to string
+  minAmountToken = Math.floor(minAmountToken).toString();
+  maxAmountToken = Math.floor(maxAmountToken).toString();
+
+  await exchange_contract.methods.removeAllLiquidity(minAmountToken, maxAmountToken).send({
+    from:web3.eth.defaultAccount, value: 0, gas: 999999
+  });
+}
+
+async function setFeeRate() {
+  let swapFeeNumerator = await exchange_contract.methods.swap_fee_numerator()
+                                                        .call({from:web3.eth.defaultAccount});
+  let swapFeeDenominator = await exchange_contract.methods.swap_fee_denominator()
+                                                          .call({from:web3.eth.defaultAccount});
+  swapFeeRate = swapFeeNumerator / swapFeeDenominator;
 }
 
 /*** SWAP ***/
 async function swapTokensForETH(amountToken, maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
+  let poolState = await getPoolState();
+  let minAmountETH = amountToken * (1 - swapFeeRate)
+                                 * poolState["eth_token_rate"]
+                                 * (1 - maxSlippagePct / 100);
 
+  // convert big ints to string
+  amountToken = Math.floor(amountToken).toString();
+  minAmountETH = Math.floor(minAmountETH).toString();
+
+  await token_contract.methods.approve(exchange_address, amountToken)
+                              .send({from:web3.eth.defaultAccount});
+  await exchange_contract.methods.swapTokensForETH(amountToken, minAmountETH).send({
+    from:web3.eth.defaultAccount, value : 0, gas : 999999});
 }
 
 async function swapETHForTokens(amountETH, maxSlippagePct) {
   /** TODO: ADD YOUR CODE HERE **/
+  let poolState = await getPoolState();
+  let minAmountToken = amountETH * (1 - swapFeeRate)
+                                 * poolState["token_eth_rate"]
+                                 * (1.0 - maxSlippagePct / 100.0);
 
+  // convert big ints to string
+  amountETH = Math.floor(amountETH).toString();
+  minAmountToken = Math.floor(minAmountToken).toString();
+
+  await exchange_contract.methods.swapETHForTokens(minAmountToken).send({
+    from:web3.eth.defaultAccount, value : amountETH, gas : 999999});
 }
 
 // =============================================================================
-//                           	UI (DO NOT MOFIDY)
+//                            UI (DO NOT MOFIDY)
 // =============================================================================
 
 
@@ -122,6 +786,9 @@ web3.eth.getAccounts().then((response)=> {
       $("#token-reserves").html(poolState['token_liquidity'] + " " + token_symbol);
       $("#eth-reserves").html(poolState['eth_liquidity'] + " ETH");
     });
+
+    // Uncomment this to run when directly opening index.html
+    // sanityCheck();
   });
 
   web3.eth.getBalance(web3.eth.defaultAccount).then((res) => {
@@ -267,12 +934,9 @@ async function sanityCheck() {
   score += check("eth_reserves updated correctly", eth_reserves_final < eth_reserves_2);
   score += check("token_reserves updated correctly", token_reserves_3 > token_reserves_2);
   // Check tokens and ETH were actually transferred
-  var final_tokens = 	await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
+  var final_tokens =  await token_contract.methods.balanceOf(web3.eth.defaultAccount).call();
   score += check("Tokens were successfully traded", final_tokens < num_tokens_3);
 
   // TODO: Students write their own tests for Part 4 + 5, since it depends on their design
   console.log("Final Score: " + score +"/36");
 }
-
-// Uncomment this to run when directly opening index.html
-// sanityCheck();

@@ -1,24 +1,73 @@
-// =================== CS251 DEX Project =================== // 
+// =================== CS251 DEX Project =================== //
 //                      Design Document                      //
 //                          Names                            //
-// ========================================================= //  
+// ========================================================= //
 
 1. Explain why adding and removing liquidity to your exchange does not change the exchange rate.
 
 
-# TODO: answer question 1 here
+The exchange rate is approximately equal to the rate between the reserves of the 2
+currencies. Adding and removing liquidity does not change this ratio, and hence
+does not change the exchange rate.
 
 
 2. Explain your scheme for rewarding liquidity providers and justify the design decisions you made. How does it satisfy requirements (2)-(4) from Section 5?
 
 
-# TODO: answer question 2 here
+The contribution of each liquidity provider is tracked via a conceptual "contribution token,"
+where the total contribution is kept tracked by summing all individual contribution tokens.
+The percentage of contribution for one liquidity provider can be
+easily computed by the ratio between individual and total contribution tokens.
+
+The initial contribution is initialized to be the same as the amount of ETH that
+the pool creator put in. Whenever new liquidity is provided, the amount of
+contribution token given to that liquidity provider is calculated by the
+following equation:
+
+    total_contribution_tokens * eth_in_liquidity / eth_reserves
+
+and the total_contribution_tokens is updated by adding this newly allocated
+contribution token. When liquidity is removed from the pool, contribution tokens
+are subtracted from the account in a similar fashion.
+
+When a swap transaction happen, the fee is subtracted from the currency that is
+being swapped into the pool, and it goes to a temporary buffer. As a result, there
+are two separate fee buffers: one for ETH and one for my created currency. An
+attempt to re-invest the fees into the pool is carried out every time after
+a swap transaction is completed. The re-investment will happen whenever
+both of the fee buffers are non-zero. A maximum amount of fees are added from the
+buffer back to the pool such that the ratio between the two currencies follows
+the same ratio as in the liquidity pool reserves. No contribution tokens are
+changed since fee re-investment does not change the contribution percentage
+of each liquidity providers.
+
+The requirements in part 5 are satisfied:
+
+(2) This is satisfied by the design of this protocol, since fees are subtracted
+    from the swap-in currency into the fee buffer.
+(3) The contribution tokens implicitly tracks the percentage of each provider's liquidity
+    amount, and therefore whenever the fees are re-invested into the pool, it becomes
+    part of each provider's liquidity given their contribution percentage. When
+    adding new liquidity into the pool, the contribution percentage is taken into
+    account by considering the pool of ETHs that contains all the fees. This ensures
+    that the new liquidity providers after the fee-reinvestment are not entitled
+    for those previously generated fees.
+(4) This is also satisfied by the design of using fee buffers. The re-investment
+    happens only when both fee buffers are non-empty so that fees can be re-invested
+    into the pool following the current exchange rate (ratio between currency reserves).
 
 
 3. Describe at least one method you used to minimize your exchange contract's gas usage. Why was this method effective?
 
-
-# TODO: answer question 3 here
+The design of using contribution tokens reduces the contract's gas usage when
+comparing to implementations where contribution is tracked via percentage or
+explicit currency amount. Both the other implementations require using for-loop
+to update the status of each liquidity provider whenever a total change in liquidity
+happens (i.e. add / remove liquidity or fees re-invested). However, using the
+scheme of contribution tokens only requires updating the contribution for
+one account. If the number of liquidity providers is large, this method
+will save a lot of gas by not needing to iterate over all liquidity providers
+at all.
 
 
 4. Optional Feedback:
